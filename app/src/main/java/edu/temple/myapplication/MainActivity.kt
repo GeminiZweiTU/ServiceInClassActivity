@@ -62,7 +62,7 @@ class MainActivity : AppCompatActivity() {
 
                 // Service says: running and not paused → pause
                 binder.isRunning && !binder.paused -> {
-                    binder.pause()=
+                    binder.pause()
                 }
 
                 // Service says: paused → unpause
