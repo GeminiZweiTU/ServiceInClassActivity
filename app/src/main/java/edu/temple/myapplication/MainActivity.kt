@@ -4,11 +4,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
-import android.os.Bundle
-import android.os.Handler
-import android.os.IBinder
-import android.os.Looper
-import android.os.Message
+import android.os.*
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -19,16 +15,17 @@ class MainActivity : AppCompatActivity() {
     private var isBound = false
 
     private lateinit var counterTextView: TextView
+    private lateinit var startPauseButton: Button
+    private lateinit var stopButton: Button
 
-    // Handler that receives updates from the Service
+    // Handler for receiving updates from the Service
     private val timerHandler = object : Handler(Looper.getMainLooper()) {
         override fun handleMessage(msg: Message) {
-            // msg.what is the countdown value sent from TimerService
             counterTextView.text = msg.what.toString()
         }
     }
 
-    // Connection object to manage binding to the Service
+    // Connection to the TimerService
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             timerBinder = service as TimerService.TimerBinder
@@ -47,27 +44,46 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         counterTextView = findViewById(R.id.textView)
+        startPauseButton = findViewById(R.id.startButton)
+        stopButton = findViewById(R.id.stopButton)
 
-        val startButton = findViewById<Button>(R.id.startButton)
-        val stopButton  = findViewById<Button>(R.id.stopButton)
+        startPauseButton.setOnClickListener {
+            if (isBound && timerBinder != null) {
+                val binder = timerBinder!!
 
-        startButton.setOnClickListener {
-            if (isBound) {
-                // Choose your starting value here (e.g., 10 seconds, 30, etc.)
-                timerBinder?.start(10)
+                when {
+                    !binder.isRunning && !binder.paused -> {
+                        // Timer is stopped → start it
+                        binder.start(10)
+                        startPauseButton.text = "Pause"
+                    }
+
+                    binder.isRunning && !binder.paused -> {
+                        // Timer is running → pause it
+                        binder.pause()
+                        startPauseButton.text = "Unpause"
+                    }
+
+                    binder.paused -> {
+                        // Timer is paused → unpause it
+                        binder.pause()
+                        startPauseButton.text = "Pause"
+                    }
+                }
             }
         }
 
         stopButton.setOnClickListener {
-            if (isBound) {
-                timerBinder?.stop()
+            if (isBound && timerBinder != null) {
+                timerBinder!!.stop()
+                startPauseButton.text = "Start"
+                counterTextView.text = "0"
             }
         }
     }
 
     override fun onStart() {
         super.onStart()
-        // Bind to TimerService
         Intent(this, TimerService::class.java).also { intent ->
             bindService(intent, connection, Context.BIND_AUTO_CREATE)
         }
