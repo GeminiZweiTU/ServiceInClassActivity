@@ -20,6 +20,14 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var counterTextView: TextView
 
+    // Handler that receives updates from the Service
+    private val timerHandler = object : Handler(Looper.getMainLooper()) {
+        override fun handleMessage(msg: Message) {
+            // msg.what is the countdown value sent from TimerService
+            counterTextView.text = msg.what.toString()
+        }
+    }
+
     // Connection object to manage binding to the Service
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
