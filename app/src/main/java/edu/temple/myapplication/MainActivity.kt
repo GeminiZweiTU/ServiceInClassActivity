@@ -18,19 +18,20 @@ class MainActivity : AppCompatActivity() {
     private lateinit var startPauseButton: Button
     private lateinit var stopButton: Button
 
-    // Handler for receiving updates from the Service
+    // Handler for receiving countdown values from the service
     private val timerHandler = object : Handler(Looper.getMainLooper()) {
         override fun handleMessage(msg: Message) {
             counterTextView.text = msg.what.toString()
         }
     }
 
-    // Connection to the TimerService
+    // ServiceConnection to bind to TimerService
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             timerBinder = service as TimerService.TimerBinder
             timerBinder?.setHandler(timerHandler)
             isBound = true
+            updateStartButtonLabel()
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
@@ -48,37 +49,51 @@ class MainActivity : AppCompatActivity() {
         stopButton = findViewById(R.id.stopButton)
 
         startPauseButton.setOnClickListener {
-            if (isBound && timerBinder != null) {
-                val binder = timerBinder!!
+            if (!isBound || timerBinder == null) return@setOnClickListener
 
-                when {
-                    !binder.isRunning && !binder.paused -> {
-                        // Timer is stopped → start it
-                        binder.start(10)
-                        startPauseButton.text = "Pause"
-                    }
+            val binder = timerBinder!!
 
-                    binder.isRunning && !binder.paused -> {
-                        // Timer is running → pause it
-                        binder.pause()
-                        startPauseButton.text = "Unpause"
-                    }
+            when {
+                // Service says: not running and not paused → start fresh
+                !binder.isRunning && !binder.paused -> {
+                    binder.start(10)          // Start countdown from 10
+                    // In the service, start() will set isRunning = true, paused = false
+                }
 
-                    binder.paused -> {
-                        // Timer is paused → unpause it
-                        binder.pause()
-                        startPauseButton.text = "Pause"
-                    }
+                // Service says: running and not paused → pause
+                binder.isRunning && !binder.paused -> {
+                    binder.pause()=
+                }
+
+                // Service says: paused → unpause
+                binder.paused -> {
+                    binder.start(10)
                 }
             }
+
+            updateStartButtonLabel()
         }
 
         stopButton.setOnClickListener {
             if (isBound && timerBinder != null) {
                 timerBinder!!.stop()
-                startPauseButton.text = "Start"
                 counterTextView.text = "0"
+                updateStartButtonLabel()
             }
+        }
+    }
+
+    private fun updateStartButtonLabel() {
+        if (!isBound || timerBinder == null) {
+            startPauseButton.text = "Start"
+            return
+        }
+
+        val binder = timerBinder!!
+        startPauseButton.text = when {
+            !binder.isRunning && !binder.paused -> "Start"    // idle
+            binder.paused -> "Unpause"                        // paused
+            else -> "Pause"                                   // running
         }
     }
 
