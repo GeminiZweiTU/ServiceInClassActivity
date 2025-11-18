@@ -5,10 +5,10 @@
     <item
         android:id="@+id/action_start_pause"
         android:title="Start"
-        app:showAsAction="ifRoom|withText" />
+        app:showAsAction="" />
 
     <item
         android:id="@+id/action_stop"
         android:title="Stop"
-        app:showAsAction="ifRoom|withText" />
+        app:showAsAction="" />
 </menu>

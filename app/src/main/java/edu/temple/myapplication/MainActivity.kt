@@ -141,7 +141,7 @@ class MainActivity : AppCompatActivity() {
         // Menu item label
         startPauseMenuItem?.title = label
 
-        //enable/disable Stop based on running state
+        //enable Stop based on running state
         val stopEnabled = isBound && timerBinder?.isRunning == true
         if (this::stopButton.isInitialized) {
             stopButton.isEnabled = stopEnabled
